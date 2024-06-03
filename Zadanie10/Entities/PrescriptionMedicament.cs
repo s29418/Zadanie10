@@ -1,4 +1,7 @@
-﻿namespace Zadanie10;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Zadanie10;
 
 public class PrescriptionMedicament
 {
@@ -7,6 +10,7 @@ public class PrescriptionMedicament
     public int Dose { get; set; }
     public string Details { get; set; }
         
-    public Medicament Medicament { get; set; }
-    public Prescription Prescription { get; set; }
+
+    public virtual Medicament Medicament { get; set; }
+    public virtual Prescription Prescription { get; set; }
 }

@@ -8,6 +8,9 @@ public class ClinicDbContext : DbContext
     public ClinicDbContext(DbContextOptions<ClinicDbContext> options) : base(options)
     {
     }
+    public ClinicDbContext()
+    {
+    }
 
     public DbSet<Medicament> Medicaments { get; set; }
     public DbSet<PrescriptionMedicament> PrescriptionMedicaments { get; set; }

@@ -1,69 +1,90 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Zadanie10.Context;
+using Zadanie10.DTO_s;
 
 namespace Zadanie10.Services;
 
 public class PrescriptionService : IPrescriptionService
 {
     private readonly ClinicDbContext _context;
-    
+
     public PrescriptionService(ClinicDbContext context)
     {
         _context = context;
     }
-    
-    public async Task<Patient> GetOrCreatePatient(Patient patient)
+
+    public async Task<Patient> GetOrCreatePatient(PatientRequest patientRequest)
     {
-        var existingPatient = await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == patient.IdPatient);
-        if (existingPatient != null)
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == patientRequest.IdPatient);
+        if (patient == null)
         {
-            return existingPatient;
+            patient = new Patient
+            {
+                FirstName = patientRequest.FirstName,
+                LastName = patientRequest.LastName,
+                Birthdate = patientRequest.Birthdate
+            };
+            _context.Patients.Add(patient);
+            await _context.SaveChangesAsync();
         }
-        
-        await _context.Patients.AddAsync(patient);
-        await _context.SaveChangesAsync();
         return patient;
     }
-    
-    public async Task<bool> MedicamentsExist(IEnumerable<int> medicamentIds)
+
+    public async Task MedicamentsExist(IEnumerable<MedicamentRequest> medicaments)
     {
-        foreach (var medicamentId in medicamentIds)
+        foreach (var medicament in medicaments)
         {
-            var existingMedicament = await _context.Medicaments.FindAsync(medicamentId);
-            if (existingMedicament == null)
+            var exists = await _context.Medicaments.AnyAsync(m => m.IdMedicament == medicament.IdMedicament);
+            if (!exists)
             {
-                return false;
+                throw new InvalidOperationException($"Medicament with ID {medicament.IdMedicament} not found");
             }
         }
-        return true;
     }
 
-    public void ValidatePrescription(Prescription prescription)
+    public void ValidatePrescription(PrescriptionRequest request)
     {
-        if (prescription.PrescriptionMedicaments.Count > 10)
+        if (request.Medicaments.Count > 10)
         {
             throw new InvalidOperationException("Too many medicaments");
         }
 
-        if (prescription.DueDate < prescription.Date)
+        if (request.DueDate < request.Date)
         {
-            throw new InvalidOperationException("Due date must be greater than date");
+            throw new InvalidOperationException("Due date must be greater than or equal to date");
         }
     }
 
-    public async Task<Prescription> AddPrescription(Prescription prescription)
+    public async Task<Doctor> GetDoctorById(int idDoctor)
     {
-        ValidatePrescription(prescription);
-
-        var patient = await GetOrCreatePatient(prescription.Patient);
-
-        var medicamentsExist = await MedicamentsExist(prescription.PrescriptionMedicaments.Select(pm => pm.IdMedicament));
-        if (!medicamentsExist)
+        var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.IdDoctor == idDoctor);
+        if (doctor == null)
         {
-            throw new InvalidOperationException("Medicaments not found");
+            throw new InvalidOperationException($"Doctor with ID {idDoctor} not found");
         }
-        
-        var doctor = await GetDoctor(prescription.IdDoctor);
+        return doctor;
+    }
+    
+    public async Task<Prescription> AddPrescription(PrescriptionRequest request, int idDoctor)
+    {
+        var patient = await GetOrCreatePatient(request.Patient);
+        await MedicamentsExist(request.Medicaments);
+        ValidatePrescription(request);
+        var doctor = await GetDoctorById(idDoctor);
+
+        var prescription = new Prescription
+        {
+            Date = request.Date,
+            DueDate = request.DueDate,
+            IdPatient = patient.IdPatient,
+            IdDoctor = doctor.IdDoctor,
+            PrescriptionMedicaments = request.Medicaments.Select(m => new PrescriptionMedicament
+            {
+                IdMedicament = m.IdMedicament,
+                Dose = m.Dose,
+                Details = m.Description
+            }).ToList()
+        };
 
         _context.Prescriptions.Add(prescription);
         await _context.SaveChangesAsync();
@@ -71,16 +92,61 @@ public class PrescriptionService : IPrescriptionService
         return prescription;
     }
     
-    public async Task<Doctor> GetDoctor(int id)
-    {
-        var doctor = await _context.Doctors.FindAsync(id);
 
-        if (doctor == null)
+
+    public async Task<Patient> GetPatientFromDatabase(int idPatient)
+    {
+        return await _context.Patients
+            .Include(p => p.Prescriptions)
+            .ThenInclude(pr => pr.PrescriptionMedicaments)
+            .ThenInclude(pm => pm.Medicament)
+            .Include(p => p.Prescriptions)
+            .ThenInclude(pr => pr.Doctor)
+            .FirstOrDefaultAsync(p => p.IdPatient == idPatient);
+    }
+
+    public PatientResponse MapPatientToResponse(Patient patient)
+    {
+        return new PatientResponse
         {
-            throw new InvalidOperationException("Doctor not found");
+            IdPatient = patient.IdPatient,
+            FirstName = patient.FirstName,
+            LastName = patient.LastName,
+            Birthdate = patient.Birthdate,
+            Prescriptions = patient.Prescriptions
+                .OrderBy(pr => pr.DueDate)
+                .Select(pr => new PrescriptionResponse
+                {
+                    IdPrescription = pr.IdPrescription,
+                    Date = pr.Date,
+                    DueDate = pr.DueDate,
+                    Doctor = new DoctorResponse
+                    {
+                        IdDoctor = pr.Doctor.IdDoctor,
+                        FirstName = pr.Doctor.FirstName,
+                        LastName = pr.Doctor.LastName
+                    },
+                    Medicaments = pr.PrescriptionMedicaments.Select(pm => new MedicamentResponse
+                    {
+                        IdMedicament = pm.Medicament.IdMedicament,
+                        Name = pm.Medicament.Name,
+                        Dose = pm.Dose,
+                        Description = pm.Medicament.Description
+                    }).ToList()
+                }).ToList()
+        };
+    }
+    
+    public async Task<PatientResponse> GetPatientDetails(int idPatient)
+    {
+        var patient = await GetPatientFromDatabase(idPatient);
+
+        if (patient == null)
+        {
+            throw new InvalidOperationException($"Patient with ID {idPatient} not found");
         }
-        
-        return doctor;
+
+        return MapPatientToResponse(patient);
     }
     
 }

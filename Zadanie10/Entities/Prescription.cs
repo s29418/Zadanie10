@@ -1,4 +1,7 @@
-﻿namespace Zadanie10;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Zadanie10;
 
 public class Prescription
 {
@@ -7,9 +10,8 @@ public class Prescription
     public DateTime DueDate { get; set; }
     public int IdPatient { get; set; }
     public int IdDoctor { get; set; }
-
-    public Patient Patient { get; set; }
-    public Doctor Doctor { get; set; }
-
-    public ICollection<PrescriptionMedicament> PrescriptionMedicaments { get; set; }
+    
+    public virtual Patient Patient { get; set; }
+    public virtual Doctor Doctor { get; set; }
+    public virtual ICollection<PrescriptionMedicament> PrescriptionMedicaments { get; set; }
 }

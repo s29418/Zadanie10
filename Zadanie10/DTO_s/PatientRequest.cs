@@ -1,13 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+namespace Zadanie10.DTO_s;
 
-namespace Zadanie10;
-
-public class Patient
+public class PatientRequest
 {
     public int IdPatient { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public DateTime Birthdate { get; set; }
-    
-    public virtual ICollection<Prescription> Prescriptions { get; set; }
 }

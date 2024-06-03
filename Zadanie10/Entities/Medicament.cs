@@ -1,4 +1,6 @@
-﻿namespace Zadanie10;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Zadanie10;
 
 public class Medicament
 {
@@ -6,4 +8,6 @@ public class Medicament
     public string Name { get; set; }
     public string Description { get; set; }
     public string Type { get; set; }
+    
+    public virtual ICollection<PrescriptionMedicament> PrescriptionMedicaments { get; set; }
 }

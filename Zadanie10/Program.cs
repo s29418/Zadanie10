@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Zadanie10.Context;
+using Zadanie10.Services;
 
 public class Program
 {
@@ -13,8 +14,9 @@ public class Program
         builder.Services.AddDbContext<ClinicDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
         
+        builder.Services.AddScoped<PrescriptionService>();
+        
         var app = builder.Build();
-
 
         if (app.Environment.IsDevelopment())
         {
