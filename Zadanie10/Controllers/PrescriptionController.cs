@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Zadanie10.DTO_s;
+using Zadanie10.Exceptions;
 using Zadanie10.Services;
 
 namespace Zadanie10.Controllers;
@@ -21,11 +22,19 @@ public class PrescriptionController : ControllerBase
         try
         {
             var prescription = await _prescriptionService.AddPrescription(request, idDoctor);
-            return Ok(prescription);
+            return CreatedAtAction(nameof(GetPrescriptionById), new { id = prescription.IdPrescription }, prescription);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return StatusCode(500, ex.Message);
         }
     }
     
@@ -37,15 +46,35 @@ public class PrescriptionController : ControllerBase
             var patientDetails = await _prescriptionService.GetPatientDetails(idPatient);
             return Ok(patientDetails);
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (InvalidOperationException ex)
         {
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            return StatusCode(500, ex.Message);
         }
     }
 
-    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetPrescriptionById(int id)
+    {
+        try
+        {
+            var prescription = await _prescriptionService.GetPrescriptionById(id);
+            if (prescription == null)
+            {
+                return NotFound();
+            }
+            return Ok(prescription);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
 }

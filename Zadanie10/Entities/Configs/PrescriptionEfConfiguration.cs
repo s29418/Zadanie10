@@ -16,13 +16,11 @@ public class PrescriptionEfConfiguration : IEntityTypeConfiguration<Prescription
         builder.HasOne(e => e.Patient)
             .WithMany(p => p.Prescriptions)
             .HasForeignKey(e => e.IdPatient)
-            .HasConstraintName("Prescription_Patient")
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(e => e.Doctor)
             .WithMany(d => d.Prescriptions)
             .HasForeignKey(e => e.IdDoctor)
-            .HasConstraintName("Prescription_Doctor")
             .OnDelete(DeleteBehavior.Restrict);
         
         builder.ToTable("Prescription");

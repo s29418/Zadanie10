@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Zadanie10.Entities;
 using Zadanie10.Entities.Configs;
 
 namespace Zadanie10.Context;
@@ -17,6 +18,7 @@ public class ClinicDbContext : DbContext
     public DbSet<Prescription> Prescriptions { get; set; }
     public DbSet<Doctor> Doctors { get; set; }
     public DbSet<Patient> Patients { get; set; }
+    public DbSet<AppUser> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,5 +29,11 @@ public class ClinicDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PrescriptionEfConfiguration());
         modelBuilder.ApplyConfiguration(new DoctorEfConfiguration());
         modelBuilder.ApplyConfiguration(new PatientEfConfiguration());
+    }
+    
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.UseSqlServer("Data Source=db-mssql;Initial Catalog=2019SBD;Integrated Security=True;Trust Server Certificate=True");
     }
 }

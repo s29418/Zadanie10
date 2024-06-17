@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Globalization;
+using Microsoft.EntityFrameworkCore;
 using Zadanie10.Context;
 using Zadanie10.DTO_s;
+using Zadanie10.Exceptions;
 
 namespace Zadanie10.Services;
 
@@ -24,7 +26,7 @@ public class PrescriptionService : IPrescriptionService
                 LastName = patientRequest.LastName,
                 Birthdate = patientRequest.Birthdate
             };
-            _context.Patients.Add(patient);
+            await _context.Patients.AddAsync(patient);
             await _context.SaveChangesAsync();
         }
         return patient;
@@ -32,14 +34,33 @@ public class PrescriptionService : IPrescriptionService
 
     public async Task MedicamentsExist(IEnumerable<MedicamentRequest> medicaments)
     {
-        foreach (var medicament in medicaments)
+        // Get all medicament IDs from the request
+        var medicamentIds = medicaments.Select(m => m.IdMedicament).ToList();
+
+        // Get all existing medicament IDs from the database
+        var existingMedicamentIds = await _context.Medicaments
+            .Where(m => medicamentIds.Contains(m.IdMedicament))
+            .Select(m => m.IdMedicament)
+            .ToListAsync();
+
+        // Check if any medicament ID from the request does not exist in the database
+        var nonExistingMedicamentIds = medicamentIds.Except(existingMedicamentIds).ToList();
+        if (nonExistingMedicamentIds.Any())
         {
-            var exists = await _context.Medicaments.AnyAsync(m => m.IdMedicament == medicament.IdMedicament);
-            if (!exists)
-            {
-                throw new InvalidOperationException($"Medicament with ID {medicament.IdMedicament} not found");
-            }
+            throw new NotFoundException($"Medicaments with ids {string.Join(", ", nonExistingMedicamentIds)} not found");
         }
+    }
+    
+    public async Task<Prescription> GetPrescriptionById(int idPrescription)
+    {
+        var prescription = await _context.Prescriptions.FirstOrDefaultAsync(p => p.IdPrescription == idPrescription);
+
+        if (prescription == null)
+        {
+            throw new NotFoundException($"Prescription with id {idPrescription} not found");
+        }
+
+        return prescription;
     }
 
     public void ValidatePrescription(PrescriptionRequest request)

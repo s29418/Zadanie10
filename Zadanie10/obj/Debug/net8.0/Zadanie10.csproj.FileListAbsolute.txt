@@ -147,3 +147,4 @@ C:\Users\misio\RiderProjects\Zadanie10\Zadanie10\obj\Debug\net8.0\Zadanie10.pdb
 C:\Users\misio\RiderProjects\Zadanie10\Zadanie10\obj\Debug\net8.0\Zadanie10.genruntimeconfig.cache
 C:\Users\misio\RiderProjects\Zadanie10\Zadanie10\obj\Debug\net8.0\ref\Zadanie10.dll
 C:\Users\misio\RiderProjects\Zadanie10\Zadanie10\obj\Debug\net8.0\Zadanie10.sourcelink.json
+C:\Users\misio\RiderProjects\Zadanie10\Zadanie10\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
